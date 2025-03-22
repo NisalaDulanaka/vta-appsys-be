@@ -3,13 +3,14 @@
 //This is the file where you should set up all your routes
 
 //Setup Routes
-Router::GET('/',[SampleController::class,'index']);
+Router::POST('/login',[AuthController::class,'login']);
 
-Router::GET('/hello',[SampleController::class,'hello']);
-    
+Router::POST('/register',[AuthController::class,'register']);
 
-Router::POST('/add', [SampleController::class, 'insert']);
+Router::POST('/confirm-user',[AuthController::class,'confirmUser']);
 
-Router::PUT('/update', [SampleController::class, 'update']);
-
-Router::DELETE('/delete', [SampleController::class, 'delete']);
+Router::POST('/protected-route',function () {
+    return [
+        "message" => "you are authenticated"
+    ];
+})->middleWare('AuthMiddleware');
