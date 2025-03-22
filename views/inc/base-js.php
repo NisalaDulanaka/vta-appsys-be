@@ -1,0 +1,1 @@
+<?php //Add all your common js files here ?>
