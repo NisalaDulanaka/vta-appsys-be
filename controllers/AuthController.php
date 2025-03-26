@@ -21,12 +21,13 @@ class AuthController extends Controller
 
     public function login(Request $request)
     {
-        $body = $this->mapToDto(LoginRequestDto::class, $request->getRequestBody());
-        if (!$body) {
-            return [
-                "error" => "invalid request body",
-            ];
+        $body = $request->getRequestBody();
+        $errors = $this->validate($body, 'AuthSchema.login');
+        if ($errors !== null) {
+            return ["error" => $errors];
         }
+
+        $body = $this->mapToDto(LoginRequestDto::class, $body);
 
         try {
             $result = $this->client->adminInitiateAuth([
@@ -45,23 +46,24 @@ class AuthController extends Controller
                 "refreshToken" => $result['AuthenticationResult']['RefreshToken'],
             ];
         } catch (AwsException $e) {
+            AppLogger::error($e->__toString());
             return ["error" => $e->getAwsErrorMessage()];
         }
     }
 
     public function register(Request $request)
     {
-        $body = $this->mapToDto(RegisterRequestDto::class, $request->getRequestBody());
-        if (!$body) {
-            return [
-                "error" => "invalid request body",
-            ];
+        $body = $request->getRequestBody();
+        $errors = $this->validate($body, 'AuthSchema.register');
+        if ($errors !== null) {
+            return ["error" => $errors];
         }
+        $body = $this->mapToDto(RegisterRequestDto::class, $body);
 
         try {
             $response = $this->client->signUp([
                 'ClientId' => $this->config['clientId'],
-                'Username' => $body->userName,
+                'Username' => $body->nic,
                 'Password' => $body->password,
                 'UserAttributes' => [
                     ['Name' => 'email', 'Value' => $body->email],
@@ -69,28 +71,30 @@ class AuthController extends Controller
                     ['Name' => 'birthdate', 'Value' => $body->dob],
                 ],
             ]);
-            
+
             if (!isset($response['CodeDeliveryDetails'])) {
                 return [
                     "error" => "Registration unsuccessful",
                 ];
             }
+
             return [
                 "message" => "Registered successfully",
             ];
         } catch (AwsException $e) {
+            AppLogger::error($e->__toString());
             return ["error" => $e->getAwsErrorMessage()];
         }
     }
 
     public function confirmUser(Request $request)
     {
-        $body = $this->mapToDto(ConfirmUserRequestDto::class, $request->getRequestBody());
-        if (!$body) {
-            return [
-                "error" => "invalid request body",
-            ];
+        $body = $request->getRequestBody();
+        $errors = $this->validate($body, 'AuthSchema.confirm');
+        if ($errors !== null) {
+            return ["error" => $errors];
         }
+        $body = $this->mapToDto(ConfirmUserRequestDto::class, $body);
 
         try {
             $response = $this->client->confirmSignUp([
@@ -104,10 +108,12 @@ class AuthController extends Controller
                     "error" => "Confirmation failed",
                 ];
             }
+
             return [
                 "message" => "User successfully confirmed",
             ];
         } catch (AwsException $e) {
+            AppLogger::error($e->__toString());
             return ["error" => $e->getAwsErrorMessage()];
         }
     }

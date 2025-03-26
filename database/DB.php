@@ -1,14 +1,10 @@
 <?php
 
-include_once('./traits/terminal.php');
-
 /**
  * A simple DB class with functions to interact and automate repetitive database interactions
  */
 class DB
 {
-    use Terminal;
-
     /**
      * Represents the current connection
      */
@@ -32,7 +28,6 @@ class DB
 
         if (self::$conn->connect_error) {
 
-            self::log('Error connecting to database ' . self::$conn->error);
             exit(0);
         }
     }

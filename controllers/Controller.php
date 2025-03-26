@@ -1,10 +1,9 @@
 <?php
-require_once('./traits/terminal.php');
+
+use Rakit\Validation\Validator;
 
 class Controller
 {
-    use Terminal;
-
     /**
      * Generates a view (UI)
      * @param string $path the path of the view file. This can be relative to the views folder or the project root
@@ -68,7 +67,7 @@ class Controller
      * @param array $data The associative array
      * @return T | null
      */
-    public function mapToDto(string $className, array $data): object | null
+    public function mapToDto(string $className, array $data): object
     {
         $reflectionClass = new ReflectionClass($className);
         $constructor = $reflectionClass->getConstructor();
@@ -79,16 +78,40 @@ class Controller
             $name = $param->getName();
             $type = $param->getType();
 
-            // Handle type casting (optional)
+            // Handle type casting
             if ($type && !$param->isOptional() && isset($data[$name])) {
                 settype($data[$name], $type->getName());
-            } else {
-                return null;
             }
 
             $args[] = $data[$name] ?? null;
         }
 
         return new $className(...$args);
+    }
+
+    /**
+     * Validates api request object against a validation schema
+     * @param array $data the request data
+     * @param string $schemaPath path to validation schema
+     * @return array the error messages if the validation fails
+     * @return null if the validation is successful
+     */
+    public function validate(array $data, string $schemaPath): ?array
+    {
+        [$file, $schemaName]= explode(".", $schemaPath);
+        $schemas = require_once("./traits/dto/schemas/$file.php");
+        $schema = $schemas[$schemaName];
+
+        $validator = new Validator();
+        if (is_callable($schema)) {
+            $schema = $schema($validator);
+        }
+
+        $validation = $validator->validate($data, $schema);
+
+        if ($validation->fails()) {
+            return $validation->errors()->all();
+        }
+        return null;
     }
 }

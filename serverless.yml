@@ -7,7 +7,7 @@ provider:
         APP_CLIENT_ID: ${ssm:/vta-apsys/client-id}
         USER_POOL_ID: ${ssm:/vta-apsys/user-pool-id}
         IDENTITY_POOL_ID: ${ssm:/vta-apsys/identity-pool-id}
-        REGION: use-east-2
+        REGION: us-east-2
 
 plugins:
     - ./vendor/bref/bref
