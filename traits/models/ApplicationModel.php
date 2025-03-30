@@ -5,7 +5,7 @@ use Aws\DynamoDb\Marshaler;
 
 trait ApplicationModel
 {
-    function addNewApplication(?string $userId, AddApplicationRequest $data)
+    function addNewApplication(string $userId, AddApplicationRequest $data)
     {
         $client = ServiceRegistry::getDbClient(UserSession::$credentials);
         $marshaler = new Marshaler();
