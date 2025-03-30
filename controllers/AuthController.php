@@ -27,7 +27,7 @@ class AuthController extends Controller
             return ["error" => $errors];
         }
 
-        $body = $this->mapToDto(LoginRequestDto::class, $body);
+        $body = LoginRequestDto::fromArray($body);
 
         try {
             $result = $this->client->adminInitiateAuth([
@@ -58,7 +58,7 @@ class AuthController extends Controller
         if ($errors !== null) {
             return ["error" => $errors];
         }
-        $body = $this->mapToDto(RegisterRequestDto::class, $body);
+        $body = RegisterRequestDto::fromArray($body);
 
         try {
             $response = $this->client->signUp([
@@ -67,8 +67,9 @@ class AuthController extends Controller
                 'Password' => $body->password,
                 'UserAttributes' => [
                     ['Name' => 'email', 'Value' => $body->email],
-                    ['Name' => 'custom:role', 'Value' => $body->userRole],
+                    ['Name' => 'custom:userRole', 'Value' => $body->userRole],
                     ['Name' => 'birthdate', 'Value' => $body->dob],
+                    ['Name' => 'name', 'Value' => $body->name],
                 ],
             ]);
 
@@ -94,7 +95,7 @@ class AuthController extends Controller
         if ($errors !== null) {
             return ["error" => $errors];
         }
-        $body = $this->mapToDto(ConfirmUserRequestDto::class, $body);
+        $body = ConfirmUserRequestDto::fromArray($body);
 
         try {
             $response = $this->client->confirmSignUp([

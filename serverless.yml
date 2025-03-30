@@ -8,6 +8,9 @@ provider:
         USER_POOL_ID: ${ssm:/vta-apsys/user-pool-id}
         IDENTITY_POOL_ID: ${ssm:/vta-apsys/identity-pool-id}
         REGION: us-east-2
+        ES_ENDPOINT: ${ssm:/vta-apsys/es-endpoint}
+        ES_USER: ${ssm:/vta-apsys/es-user}
+        ES_PASS: ${ssm:/vta-apsys/es-pass}
 
 plugins:
     - ./vendor/bref/bref
@@ -20,6 +23,22 @@ functions:
         timeout: 28 # in seconds (API Gateway has a timeout of 29 seconds)
         events:
             -   httpApi: '*'
+    
+    postConfirmation:
+        handler: functions/postConfirmation.php
+        runtime: php-84
+        events:
+            - cognitoUserPool:
+                pool: us-east-2_ISO5LlLWY
+                trigger: PostConfirmation
+        package:
+            exclude:
+                - 'node_modules/**'
+                - 'tests/**'
+                - 'http/**'
+                - 'routes/**'
+                - 'controllers/**'
+                - 'bootstrap/**'
 
 # Exclude files from deployment
 package:

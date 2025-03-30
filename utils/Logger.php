@@ -11,8 +11,8 @@ class AppLogger
     private static function handleLoggerInstance()
     {
         if (AppLogger::$log === null) {
-            $log = new Logger('stack_log');
-            $log->pushHandler(new StreamHandler('php://stderr', LEVEL::Error));
+            AppLogger::$log = new Logger('stack_log');
+            AppLogger::$log->pushHandler(new StreamHandler('php://stderr', LEVEL::Error));
         }
     }
 

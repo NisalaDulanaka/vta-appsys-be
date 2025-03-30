@@ -1,39 +1,39 @@
 <?php
-use Aws\DynamoDb\DynamoDbClient;
-use Aws\DynamoDb\Exception\DynamoDbException;
-use Aws\DynamoDb\Marshaler;
 
 require_once("./utils/UserSession.php");
+require('./traits/dto/ApplicationDto.php');
+require_once("./traits/models/ApplicationModel.php");
 
 class ApplicationController extends Controller
 {
-    public function credTest()
-    {
-        $client = new DynamoDbClient([
-            'region'  => 'us-east-2',
-            'version' => 'latest',
-            'credentials' => UserSession::$credentials,
-        ]);
-        $marshaler = new Marshaler();
-        
-        try {
-            $item = [
-                'pk' => 'APPLICATION',
-                'sk' => '74d330ae-f1ce-4480-a117-05b21b152d14',
-                'email' => 'john@example.com'
-            ];
-            
-            $params = [
-                'TableName' => 'vta_appsys_applications',
-                'Item' => $marshaler->marshalItem($item),
-            ];
+    use ApplicationModel;
 
-            $client->putItem($params);
+    public function addApplication(Request $request)
+    {
+        $body = $request->getRequestBody();
+        $errors = $this->validate($body, 'ApplicationSchema.addApplication');
+        if ($errors !== null) {
+            return ["error" => $errors];
+        }
+
+        $body = AddApplicationRequest::fromArray($body);
+
+        try {
+            $this->addNewApplication(UserSession::$userId, $body);
 
             return [
-                "message" => "Application saved successfully",
+                "message" => "Application successfully submitted",
             ];
-        } catch (DynamoDbException $e) {
+        } catch (Exception $e) {
+            throw $e;
+        }
+    }
+
+    public function getAllApplications() {
+        try {
+            return $this->getApplications(UserSession::$userId);
+        } catch(Exception $e) {
+            AppLogger::error($e->getMessage());
             throw $e;
         }
     }

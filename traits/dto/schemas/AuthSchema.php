@@ -9,9 +9,9 @@ $loginSchema = [
 
 $registerSchema = function (Validator $validator) {
     return [
-        'nic' => 'required|regex:/^(\d{12}|\d{9}(v|V))$/',
+        'nic' => ['required', 'regex:/^(\d{9}[vV]|\d{12})$/'],
         'email' => 'required|email',
-        'name' => 'required|alpha',
+        'name' => 'required|alpha_spaces',
         'password' => 'required|regex:/^(?=.*[A-Za-z])(?=.*\d)(?=.*[@$!%*?&])[A-Za-z\d@$!%*?&]{8,}$/',
         'userRole' => [
             'required',
@@ -22,7 +22,7 @@ $registerSchema = function (Validator $validator) {
 };
 
 $confirmUserSchema = [
-    'userName' => 'required|regex:/^[A-Za-z\d-]*$/',
+    'userName' => ['required', 'regex:/^(\d{9}[vV]|\d{12})$/'],
     'code' => 'required|numeric',
 ];
 

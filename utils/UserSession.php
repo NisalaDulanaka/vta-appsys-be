@@ -1,10 +1,10 @@
 <?php
 
 class UserSession {
-    public static ?array $userData;
-    public static ?string $token;
-    public static ?string $userId;
-    public static ?string $userRole;
+    public static ?array $userData = null;
+    public static ?string $token = null;
+    public static ?string $userId = null;
+    public static ?string $userRole = null;
 
-    public static ?array $credentials;
+    public static ?array $credentials = null;
 }

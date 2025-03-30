@@ -61,35 +61,6 @@ class Controller
     }
 
     /**
-     * Converts an associative array to a DTO instance
-     * @template T
-     * @param class-string<T> $className The DTO class name
-     * @param array $data The associative array
-     * @return T | null
-     */
-    public function mapToDto(string $className, array $data): object
-    {
-        $reflectionClass = new ReflectionClass($className);
-        $constructor = $reflectionClass->getConstructor();
-        $params = $constructor->getParameters();
-
-        $args = [];
-        foreach ($params as $param) {
-            $name = $param->getName();
-            $type = $param->getType();
-
-            // Handle type casting
-            if ($type && !$param->isOptional() && isset($data[$name])) {
-                settype($data[$name], $type->getName());
-            }
-
-            $args[] = $data[$name] ?? null;
-        }
-
-        return new $className(...$args);
-    }
-
-    /**
      * Validates api request object against a validation schema
      * @param array $data the request data
      * @param string $schemaPath path to validation schema

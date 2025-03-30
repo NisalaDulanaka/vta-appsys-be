@@ -5,8 +5,6 @@ use Aws\Exception\AwsException;
 use Firebase\JWT\JWK;
 use Firebase\JWT\JWT;
 
-use function PHPSTORM_META\type;
-
 require_once('./utils/UserSession.php');
 
 class AuthMiddleware extends Middleware
@@ -169,7 +167,7 @@ class AuthMiddleware extends Middleware
     private function setTokenData()
     {
         $result = $this->decodeIdToken(UserSession::$token);
-        if (type($result) === "string") {
+        if (gettype($result) === "string") {
             throw new Exception($result);
         }
 
