@@ -1,11 +1,12 @@
 <?php
 
+use App\Utils\AppResponse;
 use Aws\CognitoIdentity\CognitoIdentityClient;
 use Aws\Exception\AwsException;
 use Firebase\JWT\JWK;
 use Firebase\JWT\JWT;
 
-require_once('./utils/UserSession.php');
+use App\Utils\UserSession;
 
 class AuthMiddleware extends Middleware
 {
@@ -23,10 +24,7 @@ class AuthMiddleware extends Middleware
         $idToken = $request->header('Authorization');
 
         if ($idToken === null || empty($idToken)) {
-            return [
-                "message" => "Access denied",
-                "code" => 403,
-            ];
+            return AppResponse::error(["message" => "Access denied"], 403);
         }
 
         // initialize cognito client
@@ -42,19 +40,13 @@ class AuthMiddleware extends Middleware
             // retrieve credentials
             $errors = $this->generateCredentials();
             if ($errors) {
-                return [
-                    "message" => "Unauthorized",
-                    "code" => 403,
-                ];
+                return AppResponse::error(["message" => "Unauthorized"], 403);
             }
 
             // decode token and set user data
             $this->setTokenData();
         } catch (Exception $e) {
-            return [
-                "message" => $e->getMessage(),
-                "code" => 500,
-            ];
+            return AppResponse::error(["message" => $e->getMessage()], 403);
         }
 
         return NEXT_ROUTE;

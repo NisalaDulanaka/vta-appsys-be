@@ -1,5 +1,7 @@
 <?php
 
+namespace App\Utils;
+
 class UserSession {
     public static ?array $userData = null;
     public static ?string $token = null;

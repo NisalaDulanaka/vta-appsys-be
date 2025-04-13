@@ -65,6 +65,6 @@ function formatStackTrace($traceArray)
     return $traceString;
 }
 
-ini_set("display_errors", 0);
+// ini_set("display_errors", 0);
 set_error_handler("errorToException");
 set_exception_handler("exceptionHandler");

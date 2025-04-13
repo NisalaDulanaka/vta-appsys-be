@@ -20,6 +20,12 @@ class ApplicationCourse extends Dto
     }
 }
 
+enum ApplicationStatus {
+    case added;
+    case invited;
+    case selected;
+}
+
 class AddApplicationRequest extends Dto
 {
     public string $name;

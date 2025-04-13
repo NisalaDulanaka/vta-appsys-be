@@ -3,16 +3,16 @@
 require 'vendor/autoload.php';
 
 use Aws\DynamoDb\Exception\DynamoDbException;
-use Aws\DynamoDb\Marshaler;
+
+use App\Utils\ServiceRegistry;
+use App\Utils\AppLogger;
 
 require_once('./utils/ServiceRegistry.php');
 
 return function ($event) {
 
     $userData = $event['request']['userAttributes'];
-
     $client = ServiceRegistry::getDbClient();
-    $marshaler = new Marshaler();
 
     try {
         $timestamp = gmdate('Y-m-d\TH:i:s\Z');
@@ -29,12 +29,7 @@ return function ($event) {
             'updatedAt' => $timestamp,
         ];
         
-        $params = [
-            'TableName' => 'vta_appsys_user',
-            'Item' => $marshaler->marshalItem($item),
-        ];
-
-        $client->putItem($params);
+        $client->putItem('vta_appsys_user', $item);
     } catch (DynamoDbException $e) {
         AppLogger::error($e->__toString());
         throw $e;

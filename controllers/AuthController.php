@@ -3,6 +3,9 @@
 use Aws\CognitoIdentityProvider\CognitoIdentityProviderClient;
 use Aws\Exception\AwsException;
 
+use App\Utils\AppLogger;
+use App\Utils\AppResponse;
+
 require('./traits/dto/AuthDto.php');
 
 class AuthController extends Controller
@@ -22,9 +25,11 @@ class AuthController extends Controller
     public function login(Request $request)
     {
         $body = $request->getRequestBody();
+        AppLogger::debug($body);
+
         $errors = $this->validate($body, 'AuthSchema.login');
         if ($errors !== null) {
-            return ["error" => $errors];
+            return AppResponse::error($errors);
         }
 
         $body = LoginRequestDto::fromArray($body);
@@ -40,14 +45,14 @@ class AuthController extends Controller
                 ]
             ]);
 
-            return [
+            return AppResponse::success([
                 "accessToken" => $result['AuthenticationResult']['AccessToken'],
                 "idToken" => $result['AuthenticationResult']['IdToken'],
                 "refreshToken" => $result['AuthenticationResult']['RefreshToken'],
-            ];
+            ]);
         } catch (AwsException $e) {
             AppLogger::error($e->__toString());
-            return ["error" => $e->getAwsErrorMessage()];
+            throw $e;
         }
     }
 
@@ -56,7 +61,7 @@ class AuthController extends Controller
         $body = $request->getRequestBody();
         $errors = $this->validate($body, 'AuthSchema.register');
         if ($errors !== null) {
-            return ["error" => $errors];
+            return AppResponse::error($errors);
         }
         $body = RegisterRequestDto::fromArray($body);
 
@@ -74,17 +79,17 @@ class AuthController extends Controller
             ]);
 
             if (!isset($response['CodeDeliveryDetails'])) {
-                return [
-                    "error" => "Registration unsuccessful",
-                ];
+                return AppResponse::error([
+                    "message" => "Registration failed",
+                ]);
             }
 
-            return [
-                "message" => "Registered successfully",
-            ];
+            return AppResponse::success([
+                "message" => "User successfully registered"
+            ]);
         } catch (AwsException $e) {
             AppLogger::error($e->__toString());
-            return ["error" => $e->getAwsErrorMessage()];
+            throw $e;
         }
     }
 
@@ -93,7 +98,7 @@ class AuthController extends Controller
         $body = $request->getRequestBody();
         $errors = $this->validate($body, 'AuthSchema.confirm');
         if ($errors !== null) {
-            return ["error" => $errors];
+            return AppResponse::error($errors);
         }
         $body = ConfirmUserRequestDto::fromArray($body);
 
@@ -105,17 +110,17 @@ class AuthController extends Controller
             ]);
 
             if ($response['@metadata']['statusCode'] !== 200) {
-                return [
-                    "error" => "Confirmation failed",
-                ];
+                return AppResponse::error([
+                    "message" => "Confirmation failed",
+                ]);
             }
 
-            return [
-                "message" => "User successfully confirmed",
-            ];
+            return AppResponse::success([
+                "message" => "User successfully confirmed"
+            ]);
         } catch (AwsException $e) {
             AppLogger::error($e->__toString());
-            return ["error" => $e->getAwsErrorMessage()];
+            throw $e;
         }
     }
 }

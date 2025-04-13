@@ -1,8 +1,11 @@
 <?php
 
-require_once("./utils/UserSession.php");
 require('./traits/dto/ApplicationDto.php');
 require_once("./traits/models/ApplicationModel.php");
+
+use App\Utils\UserSession;
+use App\Utils\AppLogger;
+use App\Utils\AppResponse;
 
 class ApplicationController extends Controller
 {
@@ -13,7 +16,7 @@ class ApplicationController extends Controller
         $body = $request->getRequestBody();
         $errors = $this->validate($body, 'ApplicationSchema.addApplication');
         if ($errors !== null) {
-            return ["error" => $errors];
+            return AppResponse::error($errors, 403);
         }
 
         $body = AddApplicationRequest::fromArray($body);
@@ -21,9 +24,9 @@ class ApplicationController extends Controller
         try {
             $this->addNewApplication(UserSession::$userId, $body);
 
-            return [
+            return AppResponse::success([
                 "message" => "Application successfully submitted",
-            ];
+            ], 201);
         } catch (Exception $e) {
             throw $e;
         }

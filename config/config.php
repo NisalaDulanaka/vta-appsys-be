@@ -6,6 +6,6 @@ return [
     'clientId' => getenv('APP_CLIENT_ID'),
     'region' => getenv('REGION'),
     'elasticEndpoint' => getenv('ES_ENDPOINT'),
-    'esUsername' => getenv('ES_USER'),
-    'esPassword' => getenv('ES_PASS'),
+    'esAccess' => getenv('ES_USER'),
+    'esSecret' => getenv('ES_PASS'),
 ];

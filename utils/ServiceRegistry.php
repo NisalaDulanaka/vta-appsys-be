@@ -1,6 +1,8 @@
 <?php
 
-use Aws\DynamoDb\DynamoDbClient;
+namespace App\Utils;
+
+use App\Utils\ElasticClient;
 
 /**
  * This class is responsible for generating and maintaining
@@ -8,17 +10,13 @@ use Aws\DynamoDb\DynamoDbClient;
  */
 class ServiceRegistry
 {
-    private static ?DynamoDbClient $dynamoClient = null;
+    private static ?DbHelper $dynamoClient = null;
     private static ?ElasticClient $elasticClient = null;
 
-    public static function getDbClient(?array $credentials = null): DynamoDbClient
+    public static function getDbClient(?array $credentials = null): DbHelper
     {
         if (ServiceRegistry::$dynamoClient === null) {
-            ServiceRegistry::$dynamoClient = new DynamoDbClient([
-                'region'  => 'us-east-2',
-                'version' => 'latest',
-                'credentials' => $credentials,
-            ]);
+            ServiceRegistry::$dynamoClient = new DbHelper($credentials);
         }
 
         return ServiceRegistry::$dynamoClient;

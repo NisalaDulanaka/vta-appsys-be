@@ -5,6 +5,12 @@
         "aws/aws-sdk-php": "^3.342",
         "rakit/validation": "^1.4",
         "monolog/monolog": "^3.8",
-        "firebase/php-jwt": "^6.11"
+        "firebase/php-jwt": "^6.11",
+        "ramsey/uuid": "^4.7"
+    },
+    "autoload": {
+        "psr-4": {
+            "App\\": "./"
+        }
     }
 }

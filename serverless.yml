@@ -26,11 +26,46 @@ functions:
     
     postConfirmation:
         handler: functions/postConfirmation.php
+        description: Handle cognito post confirmation
+        runtime: php-84
+        package:
+            exclude:
+                - 'node_modules/**'
+                - 'tests/**'
+                - 'http/**'
+                - 'routes/**'
+                - 'controllers/**'
+                - 'bootstrap/**'
+
+    referenceStream:
+        handler: functions/referenceStream.php
+        description: Handle reference table stream
         runtime: php-84
         events:
-            - cognitoUserPool:
-                pool: us-east-2_ISO5LlLWY
-                trigger: PostConfirmation
+        - stream:
+            type: dynamodb
+            arn: arn:aws:dynamodb:us-east-2:182399695457:table/vta_appsys_referencedata/stream/2025-04-13T08:22:44.154
+            batchSize: 1
+            startingPosition: TRIM_HORIZON
+        package:
+            exclude:
+                - 'node_modules/**'
+                - 'tests/**'
+                - 'http/**'
+                - 'routes/**'
+                - 'controllers/**'
+                - 'bootstrap/**'
+
+    applicationStream:
+        handler: functions/applicationStream.php
+        description: Handle applications table stream
+        runtime: php-84
+        events:
+        - stream:
+            type: dynamodb
+            arn: arn:aws:dynamodb:us-east-2:182399695457:table/vta_appsys_applications/stream/2025-04-13T08:23:16.396
+            batchSize: 1
+            startingPosition: TRIM_HORIZON
         package:
             exclude:
                 - 'node_modules/**'

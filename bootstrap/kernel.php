@@ -3,8 +3,6 @@
 $config = require('./bootstrap/config/config.php');
 require_once('./bootstrap/config/environment.php');
 require_once('./bootstrap/config/errorHandler.php');
-require_once('./utils/Logger.php');
-require_once('./utils/ServiceRegistry.php');
 require_once('./traits/dto/Dto.php');
 require_once('./controllers/Controller.php');
 require_once('./http/middleware/Middleware.php');

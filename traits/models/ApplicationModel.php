@@ -1,21 +1,26 @@
 <?php
 
 use Aws\DynamoDb\Exception\DynamoDbException;
-use Aws\DynamoDb\Marshaler;
+use Ramsey\Uuid\Uuid;
+
+use App\Utils\ServiceRegistry;
+use App\Utils\UserSession;
+use App\Utils\AppLogger;
 
 trait ApplicationModel
 {
     function addNewApplication(string $userId, AddApplicationRequest $data)
     {
         $client = ServiceRegistry::getDbClient(UserSession::$credentials);
-        $marshaler = new Marshaler();
 
         try {
+            $applicationId = Uuid::uuid4();
             $timestamp = gmdate('Y-m-d\TH:i:s\Z');
 
             $item = [
                 'pk' => "APPLICATION#{$userId}",
-                'sk' => $data->nic,
+                'sk' => "{$data->nic}#{$applicationId}",
+                'applicationId' => $applicationId,
                 'userId' => $userId,
                 'name' => $data->name,
                 'nic' => $data->nic,
@@ -27,16 +32,12 @@ trait ApplicationModel
                     'centerId' => $course->centerId,
                     'centerName' => $course->centerName
                 ], $data->courses),
+                'status' => ApplicationStatus::added,
                 'createdAt' => $timestamp,
                 'updatedAt' => $timestamp,
             ];
 
-            $params = [
-                'TableName' => 'vta_appsys_applications',
-                'Item' => $marshaler->marshalItem($item),
-            ];
-
-            $client->putItem($params);
+            $client->putItem('vta_appsys_applications', $item);
         } catch (DynamoDbException $e) {
             AppLogger::error($e->__toString());
             throw $e;
@@ -56,7 +57,7 @@ trait ApplicationModel
                 ]
             ];
 
-            $applications = $client->search('index_name', $query);
+            $applications = $client->search('appsys_applications', $query);
 
             return $applications;
         } catch (\Exception $e) {
