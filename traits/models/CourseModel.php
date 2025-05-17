@@ -3,9 +3,9 @@
 use Aws\DynamoDb\Exception\DynamoDbException;
 use Ramsey\Uuid\Uuid;
 
-use App\Utils\ServiceRegistry;
-use App\Utils\UserSession;
-use App\Utils\AppLogger;
+use Utils\ServiceRegistry;
+use Utils\UserSession;
+use Utils\AppLogger;
 
 trait CourseModel
 {
@@ -41,7 +41,7 @@ trait CourseModel
         $client = ServiceRegistry::getDbClient(UserSession::$credentials);
 
         try {
-            $courseId = Uuid::uuid4();
+            $courseId = Uuid::uuid4()->toString();
             $timestamp = gmdate('Y-m-d\TH:i:s\Z');
 
             $item = [
@@ -50,18 +50,98 @@ trait CourseModel
                 'courseId' => $courseId,
                 'courseName' => $data->courseName,
                 'nvqLevel' => $data->nvqLevel,
-                'courseType' => $data->courseType,
+                'description' => $data->description,
+                'courseType' => $data->courseType->value,
                 'centers' => $data->centers,
                 'createdAt' => $timestamp,
                 'updatedAt' => $timestamp,
             ];
 
+            AppLogger::debug($item);
             $client->putItem('vta_appsys_referencedata', $item);
         } catch (DynamoDbException $e) {
             AppLogger::error($e->__toString());
             throw $e;
         }
     }
+
+    function updateExistingCourse(UpdateCourseRequest $data): void
+    {
+        $client = ServiceRegistry::getDbClient(UserSession::$credentials);
+
+        try {
+            $timestamp = gmdate('Y-m-d\TH:i:s\Z');
+
+            $updates = [
+                'courseName' => $data->updates->courseName,
+                'nvqLevel' => $data->updates->nvqLevel,
+                'description' => $data->updates->description,
+                'courseType' => $data->updates->courseType->value,
+                'centers' => $data->updates->centers,
+                'updatedAt' => $timestamp
+            ];
+
+            $updateRequest = $client->buildUpdateItemRequest($updates);
+
+            if (empty($updateRequest)) {
+                return; // Nothing to update
+            }
+
+            $key = [
+                'pk' => "COURSE",
+                'sk' => $data->courseId,
+            ];
+
+            $client->updateItem([
+                'TableName' => 'vta_appsys_referencedata',
+                'Key' => $key,
+                ...$updateRequest
+            ]);
+        } catch (DynamoDbException $e) {
+            AppLogger::error($e->__toString());
+            throw $e;
+        }
+    }
+
+    function deleteExistingCourse(string $courseId): void
+    {
+        $client = ServiceRegistry::getDbClient(UserSession::$credentials);
+
+        try {
+            $key = [
+                'pk' => 'COURSE',
+                'sk' => $courseId,
+            ];
+
+            AppLogger::debug(['Deleting course with ID' => $courseId]);
+            $client->deleteItem('vta_appsys_referencedata', $key);
+        } catch (DynamoDbException $e) {
+            AppLogger::error($e->__toString());
+            throw $e;
+        }
+    }
+
+
+    function getASingleCourse(string $courseId): ?array
+    {
+        $client = ServiceRegistry::getDbClient(UserSession::$credentials);
+
+        try {
+            $key = [
+                'pk' => 'COURSE',
+                'sk' => $courseId,
+            ];
+
+            $item = $client->getItem('vta_appsys_referencedata', $key);
+            AppLogger::debug($item);
+
+            return $item;
+        } catch (DynamoDbException $e) {
+            AppLogger::error($e->__toString());
+            throw $e;
+        }
+    }
+
 
     function getCourses(GetCourseRequest $data)
     {
@@ -70,18 +150,90 @@ trait CourseModel
         try {
             $query = [
                 'query' => [],
+                'from' => $data->startLimit ?? 0,
+                'size' => $data->itemCount ?? 10,
             ];
 
-            if (!empty($data->term))
-            {
-                $query['query']['match_phrase'] = [
+            $termCondition = [];
+            if (!empty($data->term)) {
+                $termCondition['match_phrase'] = [
                     'courseName' => $data->term,
                 ];
             } else {
-                $query['query']['match_all'] = new stdClass();
+                $termCondition['match_all'] = new stdClass();
             }
 
+            if (isset($data->filters) && $data->filters !== null) {
+                $query['query']['bool'] = [
+                    'must' => [
+                        $termCondition
+                    ],
+                ];
+
+                foreach ($data->filters as $key => $value) {
+                    if (!empty($value)) {
+                        $query['query']['bool']['filter'][] = [
+                            'term' => [
+                                $key => $value,
+                            ],
+                        ];
+                    }
+                }
+            } else {
+                $query['query'][] = $termCondition;
+            }
+
+
+            AppLogger::debug($query);
+
             $result = $client->search("appsys_courses", $query);
+            return $result;
+        } catch (DynamoDbException $e) {
+            AppLogger::error($e->__toString());
+            throw $e;
+        }
+    }
+
+    function getCenters(GetCenterRequest $data)
+    {
+        $client = ServiceRegistry::getOpenSearchClient();
+
+        try {
+            $query = [
+                'query' => [],
+            ];
+
+            $termCondition = [];
+            if (!empty($data->term)) {
+                $termCondition['match_phrase'] = [
+                    'centerName' => $data->term,
+                ];
+            } else {
+                $termCondition['match_all'] = new stdClass();
+            }
+
+            if (isset($data->filters) && $data->filters !== null) {
+                $query['query']['bool'] = [
+                    'must' => [
+                        $termCondition
+                    ],
+                ];
+
+                foreach ($data->filters as $key => $value) {
+                    if (!empty($value)) {
+                        $query['query']['bool']['filter'][] = [
+                            'term' => [
+                                $key => $value,
+                            ],
+                        ];
+                    }
+                }
+            } else {
+                $query['query'][] = $termCondition;
+            }
+            AppLogger::debug($query);
+
+            $result = $client->search("appsys_centers", $query);
             return $result;
         } catch (DynamoDbException $e) {
             AppLogger::error($e->__toString());

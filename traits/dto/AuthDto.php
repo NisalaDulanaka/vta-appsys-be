@@ -56,6 +56,20 @@ class ConfirmUserRequestDto extends Dto
     }
 }
 
+class ResendCodeRequestDto extends Dto
+{
+    public function __construct(
+        public string $userName,
+    ) {}
+
+    public static function fromArray(array $data): self 
+    {
+        return new self(
+            userName: $data['userName'] ?? ''
+        );
+    }
+}
+
 class UpdateUserDataDto
 {
     public function __construct(

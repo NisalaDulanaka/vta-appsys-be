@@ -2,8 +2,8 @@
 
 require 'vendor/autoload.php';
 
-use App\Utils\AppLogger;
-use App\Utils\ServiceRegistry;
+use Utils\AppLogger;
+use Utils\ServiceRegistry;
 
 return function (array $event) {
     $dbClient = ServiceRegistry::getDbClient();
@@ -11,8 +11,20 @@ return function (array $event) {
 
     foreach ($records as $record) {
         try {
-            $shouldUpdate = empty($record['oldImage']) || $record['eventName'] === 'MODIFY';
+            AppLogger::debug($record);
+            $client = ServiceRegistry::getOpenSearchClient();
+            
+            if ($record['eventName'] === 'REMOVE' && !empty($record['oldImage']['courseId'])) {
+                AppLogger::debug([
+                    "message" => "deleting item from elastic search"
+                ]);
+                $client->deleteByQuery('appsys_courses', [
+                    'term' => ['courseId' => $record['oldImage']['courseId']]
+                ]);
+                return;
+            }
 
+            $shouldUpdate = empty($record['oldImage']) || $record['eventName'] === 'MODIFY';
             if (!$shouldUpdate) {
                 continue;
             }
@@ -24,7 +36,6 @@ return function (array $event) {
                 $id = $record['newImage']['centerId'];
             }
 
-            $client = ServiceRegistry::getOpenSearchClient();
             $client->putDocument($indexName, $record['newImage'], $id);
         } catch (Exception $e) {
             AppLogger::error($e->__toString());

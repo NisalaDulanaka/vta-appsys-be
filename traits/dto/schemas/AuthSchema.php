@@ -15,7 +15,7 @@ $registerSchema = function (Validator $validator) {
         'password' => 'required|regex:/^(?=.*[A-Za-z])(?=.*\d)(?=.*[@$!%*?&])[A-Za-z\d@$!%*?&]{8,}$/',
         'userRole' => [
             'required',
-            $validator('in', ["vta-student-role"]), // @TODO: move user roles to a separate config file
+            $validator('in', ["vta-student-role", "vta-admin-role"]), // @TODO: move user roles to a separate config file
         ],
         'dob' => 'required|regex:/^\d{2}\/\d{2}\/\d{4}/',
     ];
@@ -26,8 +26,13 @@ $confirmUserSchema = [
     'code' => 'required|numeric',
 ];
 
+$resendCodeSchema = [
+    'userName' => ['required', 'regex:/^(\d{9}[vV]|\d{12})$/'],
+];
+
 return [
     "login" => $loginSchema,
     "register" => $registerSchema,
     "confirm" => $confirmUserSchema,
+    "resend" => $resendCodeSchema,
 ];

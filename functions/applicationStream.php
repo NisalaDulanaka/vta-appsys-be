@@ -2,8 +2,8 @@
 
 require 'vendor/autoload.php';
 
-use App\Utils\AppLogger;
-use App\Utils\ServiceRegistry;
+use Utils\AppLogger;
+use Utils\ServiceRegistry;
 
 return function (array $event) {
     $dbClient = ServiceRegistry::getDbClient();
@@ -11,6 +11,7 @@ return function (array $event) {
 
     foreach ($records as $record) {
         try {
+            AppLogger::debug($record);
             $shouldUpdate = empty($record['oldImage']) || $record['eventName'] === 'MODIFY';
 
             if (!$shouldUpdate) {

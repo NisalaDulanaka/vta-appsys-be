@@ -81,7 +81,10 @@ class Controller
         $validation = $validator->validate($data, $schema);
 
         if ($validation->fails()) {
-            return $validation->errors()->all();
+            $errors = $validation->errors()->all();
+            return [
+                "message" => implode(", ", $errors),
+            ];
         }
         return null;
     }

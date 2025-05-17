@@ -3,9 +3,9 @@
 require('./traits/dto/ApplicationDto.php');
 require_once("./traits/models/ApplicationModel.php");
 
-use App\Utils\UserSession;
-use App\Utils\AppLogger;
-use App\Utils\AppResponse;
+use Utils\UserSession;
+use Utils\AppLogger;
+use Utils\AppResponse;
 
 class ApplicationController extends Controller
 {
@@ -26,15 +26,51 @@ class ApplicationController extends Controller
 
             return AppResponse::success([
                 "message" => "Application successfully submitted",
-            ], 201);
+            ], 200);
         } catch (Exception $e) {
             throw $e;
         }
     }
 
-    public function getAllApplications() {
+    public function updateApplication(Request $request)
+    {
+        $body = $request->getRequestBody();
+        $errors = $this->validate($body, 'ApplicationSchema.updateApplication');
+        if ($errors !== null) {
+            return AppResponse::error($errors, 403);
+        }
+
+        $body = UpdateApplicationRequest::fromArray($body);
+
         try {
-            return $this->getApplications(UserSession::$userId);
+            $this->updateExistingApplication($body);
+
+            return AppResponse::success([
+                "message" => "Application successfully updated",
+            ], 200);
+        } catch (Exception $e) {
+            throw $e;
+        }
+    }
+
+    public function getAllApplications(Request $request) {
+        $body = $request->getRequestBody();
+        AppLogger::debug($body);
+        
+        $errors = $this->validate($body, 'ApplicationSchema.searchApplications');
+        if ($errors !== null) {
+            return AppResponse::error($errors, 403);
+        }
+
+        $body = SearchApplicationsRequest::fromArray($body);
+        try {
+            $data = $this->getApplications(UserSession::$userId, $body);
+
+            return AppResponse::success([
+                "applications" => $data["records"],
+                "total" => $data["totalItemCount"],
+                "endLimit" => $data["endLimit"]
+            ]);
         } catch(Exception $e) {
             AppLogger::error($e->getMessage());
             throw $e;

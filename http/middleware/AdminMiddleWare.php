@@ -1,7 +1,7 @@
 <?php
 
-use App\Utils\AppResponse;
-use App\Utils\UserSession;
+use Utils\AppResponse;
+use Utils\UserSession;
 
 class AdminMiddleWare extends Middleware
 {

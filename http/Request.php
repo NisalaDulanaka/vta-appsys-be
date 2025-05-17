@@ -1,5 +1,7 @@
 <?php
 
+use Utils\AppLogger;
+
 /**
  * The Request class provides easy to use methods and attributes, which can be used to 
  * interact with the requests made to server with ease
@@ -49,6 +51,14 @@ class Request
         $this->createHeaders();
         //Created the request body
         $this->createRequestBody();
+
+        AppLogger::debug([
+            "method" => $this->method,
+            "url" => $this->url,
+            "query" => $this->query,
+            "header" => $this->headers,
+            "body" => $this->body,
+        ]);
     }
 
     /**
@@ -57,7 +67,9 @@ class Request
     private function createRequestBody(): void
     {
 
-        if ($this->method === 'POST' && (isset($_SERVER['HTTP_CONTENT_TYPE']) && $_SERVER['HTTP_CONTENT_TYPE'] !== 'application/json')) {
+        $contentType = $_SERVER['HTTP_CONTENT_TYPE'] ?? $_SERVER['CONTENT_TYPE'] ?? '';
+        
+        if ($this->method === 'POST' && !str_contains($contentType, 'application/json')) {
             $this->body = $_POST;
         } else {
             $this->body = self::getResponseParams();
@@ -109,14 +121,10 @@ class Request
         $data = [];
 
         try {
-
-            if ((isset($_SERVER['HTTP_CONTENT_TYPE']) && $_SERVER['HTTP_CONTENT_TYPE'] === 'application/json')) {
-                $content = file_get_contents('php://input');
-                $data = json_decode($content, true);
-            }
+            $content = file_get_contents('php://input');
+            $data = json_decode($content, true);
         } catch (Exception $ex) {
-            //Handle exceptions
-            echo ("Error in json parsing" . $ex->getMessage());
+            AppLogger::error("Error in json parsing " . $ex->getMessage());
         }
 
         return ($data === null) ? [] : $data;

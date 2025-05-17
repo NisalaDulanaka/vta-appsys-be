@@ -103,6 +103,16 @@ class Router
         $request = new Request();
 
         switch ($request->method) {
+            // this should be moved and handled properly,
+            // @TODO: introduce a new course handler for this
+            case 'OPTIONS':
+                header('Access-Control-Allow-Origin: http://localhost:3000');
+                header('Access-Control-Allow-Credentials: true');
+                header('Access-Control-Allow-Methods: GET, POST, PUT, DELETE, OPTIONS');
+                header('Access-Control-Allow-Headers: Content-Type, Authorization');
+                http_response_code(204);
+                exit;
+
             case 'POST':
                 self::executeRoute($request, self::$post);
                 return;

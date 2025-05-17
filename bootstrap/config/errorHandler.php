@@ -16,10 +16,11 @@ function printErrorMessage(string $message, string $errorFile = "File could not 
     http_response_code($errorCode); // set the response code
 
     if ($appType === "api") {
-        $errorObject["code"] = $errorCode;
-
         header("Content-Type: application/json");
-        echo json_encode($errorObject, JSON_PRETTY_PRINT);
+        echo json_encode([
+            "error" => $errorObject,
+            "statusCode" => $errorCode,
+        ], JSON_PRETTY_PRINT);
     } else {
         $errorObject["stack"] = $errorStack;
         include("./views/error_page.php");

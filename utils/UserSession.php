@@ -1,6 +1,6 @@
 <?php
 
-namespace App\Utils;
+namespace Utils;
 
 class UserSession {
     public static ?array $userData = null;

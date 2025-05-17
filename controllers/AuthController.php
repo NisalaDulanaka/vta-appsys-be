@@ -1,10 +1,11 @@
 <?php
 
+use Utils\AppLogger;
+use Utils\AppResponse;
+use Utils\UserSession;
+
 use Aws\CognitoIdentityProvider\CognitoIdentityProviderClient;
 use Aws\Exception\AwsException;
-
-use App\Utils\AppLogger;
-use App\Utils\AppResponse;
 
 require('./traits/dto/AuthDto.php');
 
@@ -29,7 +30,7 @@ class AuthController extends Controller
 
         $errors = $this->validate($body, 'AuthSchema.login');
         if ($errors !== null) {
-            return AppResponse::error($errors);
+            return AppResponse::error($errors, 403);
         }
 
         $body = LoginRequestDto::fromArray($body);
@@ -51,6 +52,14 @@ class AuthController extends Controller
                 "refreshToken" => $result['AuthenticationResult']['RefreshToken'],
             ]);
         } catch (AwsException $e) {
+            $errorCode = $e->getAwsErrorCode();
+
+            if ($errorCode === 'NotAuthorizedException') {
+                return AppResponse::error(["message" => "Invalid username or password."], 401);
+            } elseif ($errorCode === 'UserNotFoundException') {
+                return AppResponse::error(["message" => "User does not exist."], 401);
+            }
+
             AppLogger::error($e->__toString());
             throw $e;
         }
@@ -61,7 +70,7 @@ class AuthController extends Controller
         $body = $request->getRequestBody();
         $errors = $this->validate($body, 'AuthSchema.register');
         if ($errors !== null) {
-            return AppResponse::error($errors);
+            return AppResponse::error($errors, 403);
         }
         $body = RegisterRequestDto::fromArray($body);
 
@@ -98,7 +107,7 @@ class AuthController extends Controller
         $body = $request->getRequestBody();
         $errors = $this->validate($body, 'AuthSchema.confirm');
         if ($errors !== null) {
-            return AppResponse::error($errors);
+            return AppResponse::error($errors, 403);
         }
         $body = ConfirmUserRequestDto::fromArray($body);
 
@@ -119,6 +128,59 @@ class AuthController extends Controller
                 "message" => "User successfully confirmed"
             ]);
         } catch (AwsException $e) {
+            AppLogger::error($e->__toString());
+            throw $e;
+        }
+    }
+
+    public function resendCode(Request $request)
+    {
+        $body = $request->getRequestBody();
+        $errors = $this->validate($body, 'AuthSchema.resend');
+        if ($errors !== null) {
+            return AppResponse::error($errors, 403);
+        }
+        $body = ResendCodeRequestDto::fromArray($body);
+
+        try {
+            $response = $this->client->resendConfirmationCode([
+                'ClientId' => $this->config['clientId'],
+                'Username' => $body->userName,
+            ]);
+
+            if ($response['@metadata']['statusCode'] !== 200) {
+                return AppResponse::error([
+                    "message" => "Resend code failed",
+                ]);
+            }
+
+            return AppResponse::success([
+                "message" => "Confirmation code resent successfully"
+            ]);
+        } catch (AwsException $e) {
+            AppLogger::error($e->__toString());
+            throw $e;
+        }
+    }
+
+    public function getUser()
+    {
+        try {
+            if (UserSession::$userData === null) {
+                return AppResponse::error([
+                    "message" => "User not logged in",
+                ], 404);
+            }
+
+            return AppResponse::success([
+                "userId" => UserSession::$userData['sub'],
+                "email" => UserSession::$userData['email'],
+                "name" => UserSession::$userData['name'],
+                "userRole" => UserSession::$userData['custom:userRole'],
+                "birthdate" => UserSession::$userData['birthdate'],
+                "userName" => UserSession::$userData['cognito:username'],
+            ]);
+        } catch (Exception $e) {
             AppLogger::error($e->__toString());
             throw $e;
         }

@@ -1,6 +1,6 @@
 <?php
 
-namespace App\Utils;
+namespace Utils;
 
 use Aws\Credentials\Credentials;
 use Aws\Signature\SignatureV4;
@@ -33,24 +33,20 @@ class ElasticClient
     public function search(string $index, array $searchRequest)
     {
         $url = "{$this->endpoint}/{$index}/_search";
-        $accessKey = $this->config['esUsername'];
-        $secretKey = $this->config['esPassword'];
-        $region = $this->config['region'];
-        $service = 'es';
+        $accessKey = $this->config['esAccess'];
+        $secretKey = $this->config['esSecret'];
+
+        AppLogger::debug($this->config);
 
         $endpoint = $this->endpoint;
         $url = "{$endpoint}/{$index}/_search";
 
-        $credentials = new Credentials($accessKey, $secretKey);
-        $signer = new SignatureV4($service, $region);
-
         $request = new Request('POST', $url, [
+            'auth' => [$accessKey, $secretKey],
             'Content-Type' => 'application/json'
         ], json_encode($searchRequest));
 
-        $signedRequest = $signer->signRequest($request, $credentials);
-
-        $response = $this->httpClient->send($signedRequest);
+        $response = $this->httpClient->send($request);
 
         $result = json_decode($response->getBody()->getContents(), true);
 
@@ -59,6 +55,8 @@ class ElasticClient
         $records = array_map(fn($item) => $item["_source"], $hits);
         $startFrom = $searchRequest['from'] ?? 0;
         $endLimit = $startFrom + count($records);
+
+        AppLogger::debug($result);
 
         return [
             'records' => $records,
@@ -73,30 +71,57 @@ class ElasticClient
      * @param array $document The document data to be indexed
      * @param string|null $id Optional document ID (if null, OpenSearch will auto-generate one)
      */
-    public function putDocument(string $index, array $document, ?string $id): array
+    public function putDocument(string $index, array $document, ?string $id = null): array
     {
-        $url = $id
-            ? "{$this->endpoint}/{$index}/_doc/{$id}" // Put with specific ID
-            : "{$this->endpoint}/{$index}/_doc";      // Post to auto-generate ID
+        $url = empty($id)
+            ? "{$this->endpoint}/{$index}/_doc" // Post to auto-generate ID
+            : "{$this->endpoint}/{$index}/_doc/{$id}"; // Put with specific ID
 
         $accessKey = $this->config['esAccess'];
         $secretKey = $this->config['esSecret'];
-        $region = $this->config['region'];
-        $service = 'es';
-
-        $credentials = new Credentials($accessKey, $secretKey);
-        $signer = new SignatureV4($service, $region);
 
         $method = $id ? 'PUT' : 'POST';
 
         $request = new Request($method, $url, [
+            'auth' => [$accessKey, $secretKey],
             'Content-Type' => 'application/json'
-        ], json_encode($$document));
+        ], json_encode($document));
+        AppLogger::debug([
+            'url' => $url,
+            'method' => $method,
+            'document' => $document,
+            'id' => $id,
+        ]);
 
-        $signedRequest = $signer->signRequest($request, $credentials);
-
-        $response = $this->httpClient->send($signedRequest);
+        $response = $this->httpClient->send($request);
 
         return json_decode($response->getBody()->getContents(), true);
+    }
+
+    public function deleteByQuery(string $index, array $query): array
+    {
+        $url = "{$this->endpoint}/{$index}/_delete_by_query";
+
+        $accessKey = $this->config['esAccess'];
+        $secretKey = $this->config['esSecret'];
+
+        $request = new Request('POST', $url, [
+            'auth' => [$accessKey, $secretKey],
+            'Content-Type' => 'application/json'
+        ], json_encode(['query' => $query]));
+
+        AppLogger::debug([
+            'url' => $url,
+            'method' => 'POST',
+            'query' => $query,
+        ]);
+
+        try {
+            $response = $this->httpClient->send($request);
+            return json_decode($response->getBody()->getContents(), true);
+        } catch (\Exception $e) {
+            AppLogger::error("Elasticsearch deleteByQuery error: " . $e->getMessage());
+            throw $e;
+        }
     }
 }

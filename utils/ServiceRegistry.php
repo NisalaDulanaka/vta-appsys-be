@@ -1,8 +1,8 @@
 <?php
 
-namespace App\Utils;
+namespace Utils;
 
-use App\Utils\ElasticClient;
+use Utils\ElasticClient;
 
 /**
  * This class is responsible for generating and maintaining

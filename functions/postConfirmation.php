@@ -4,12 +4,13 @@ require 'vendor/autoload.php';
 
 use Aws\DynamoDb\Exception\DynamoDbException;
 
-use App\Utils\ServiceRegistry;
-use App\Utils\AppLogger;
+use Utils\ServiceRegistry;
+use Utils\AppLogger;
 
 require_once('./utils/ServiceRegistry.php');
 
 return function ($event) {
+    AppLogger::debug($event);
 
     $userData = $event['request']['userAttributes'];
     $client = ServiceRegistry::getDbClient();
@@ -35,5 +36,12 @@ return function ($event) {
         throw $e;
     }
 
+    if (!isset($event['response']) || !is_array($event['response'])) {
+        $event['response'] = [];
+    }
+
+    AppLogger::debug([
+        "returningValue" => $event,
+    ]);
     return $event;
 };
